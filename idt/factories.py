@@ -2,7 +2,7 @@ from idt.duckgo import DuckGoSearchEngine
 from idt.bing import BingSearchEngine
 from idt.bing_api import BingApiSearchEngine 
 from idt.flickr_api import FlickrApiSearchEngine
-
+from idt.yandex import YandexSearchEngine
 __name__ = "factories"
 
 class SearchEngineFactory:
@@ -26,5 +26,7 @@ class SearchEngineFactory:
 			return BingApiSearchEngine(self.data, self.n_images, self.folder, self.resize_method, self.root_folder, self.size, self.api_key)
 		elif self.engine == "flickr_api":
 			return FlickrApiSearchEngine(self.data, self.n_images, self.folder, self.resize_method, self.root_folder, self.size, self.api_key)
+		elif self.engine == "yandex":
+			return YandexSearchEngine(self.data, self.n_images, self.folder,self.resize_method,self.root_folder, self.size)
 		else:
 			return None
