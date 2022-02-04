@@ -2,6 +2,7 @@ import json
 import os
 
 import requests
+import time
 from bs4 import BeautifulSoup as bs4
 from fake_headers import Headers
 from rich.progress import Progress
@@ -48,10 +49,12 @@ class Result:
 
 
 class YandexSearchEngine:
+    lastsearchSec = 0
     def __init__(self, data, n_images, folder, resize_method, root_folder, size):
         self.sizeYandex = Size()
         self.headers = Headers(headers=True).generate()
-
+        self.countRetry = 0
+        self.sleepSec = 60
         self.data = data
         self.n_images = n_images
         self.folder = folder
@@ -62,15 +65,30 @@ class YandexSearchEngine:
         self.search()
 
     def get_result(self, query: str, sizes: Size) -> list:
-        request = requests.get('https://yandex.ru/images/search',
-                               params={"text": query,
-                                       "nomisspell": 1,
-                                       "noreask": 1,
-                                       "isize": sizes
-                                       },
-                               headers=self.headers)
+        while True:
+            timeDelta = (int(time.time()) - YandexSearchEngine.lastsearchSec)
+            if timeDelta < 300:
+                time.sleep(300 - timeDelta)
 
-        soup = bs4(request.text, 'html.parser')
+            response = requests.get('https://yandex.ru/images/search',
+                                    params={"text": query,
+                                            "nomisspell": 1,
+                                            "noreask": 1,
+                                            "isize": sizes
+                                            },
+                                    headers=self.headers)
+            if response.status_code == 200:
+                break
+            self.countRetry += 1
+            if self.countRetry > 10:
+                break
+            time.sleep(self.sleepSec)
+            self.sleepSec *= 2
+            continue
+
+        self.sleepSec = 10
+        YandexSearchEngine.lastsearchSec = int(time.time())
+        soup = bs4(response.text, 'html.parser')
         items_place = soup.find('div', {"class": "serp-list"})
         output = list()
         try:
